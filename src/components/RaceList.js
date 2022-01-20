@@ -1,31 +1,34 @@
 import React from 'react';
+import './RaceList.css'
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 
 const RaceList = ({ raceList }) => {
   return (
-    <div>
-      <div>
-        <div>
-          Meeting name:
-        </div>
-        <div>
-          Race number:
-        </div>
-        <div>
-          Start time:
-        </div>
-      </div>
-      <div>
-        <ul>
+    <TableContainer>
+      <Table w="1120px">
+        <TableHead>
+          <TableRow>
+            <TableCell align="center">Meeting name</TableCell>
+            <TableCell align="center">Race number</TableCell>
+            <TableCell align="center">Starting time</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
           {raceList.map((race) => (
-            <li key={race.id}>
-              <div>{race.meeting_name}</div>
-              <div>{race.race_number}</div>
-              <div></div>
-            </li>
+            <TableRow key={race.race_id}>
+              <TableCell align="center">{race.meetingName}</TableCell>
+              <TableCell align="center">{race.raceNumber}</TableCell>
+              <TableCell align="center">{race.advertisedStart.seconds}</TableCell>
+            </TableRow>
           ))}
-        </ul>
-      </div>
-    </div>
+        </TableBody>
+      </Table>
+    </TableContainer>
   )
 }
 

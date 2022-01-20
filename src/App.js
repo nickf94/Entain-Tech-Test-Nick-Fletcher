@@ -7,7 +7,6 @@ const App = () => {
   const [races, setRaces] = useState([]);
   const [sortedRaces, setSortedRaces] = useState([]);
   const [unsortedRaces, setUnsortedRaces] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [time, setTime] = useState(Date.now());
   const [raceCount, setRaceCount] = useState(100);
   const [requestedCount, setRequestedCount] = useState(5);
@@ -83,9 +82,12 @@ const App = () => {
         setRaceCount({ raceCount: raceCount + 1 });
         getRaceData();
       }
+
+      setRaces(newRaces);
     })
-    return sortedRaces;
   }
+
+  console.log(races);
 
   const filterData = () => {
     return races.reduce((accumulator, race) => {
@@ -121,7 +123,7 @@ const App = () => {
   return (
     <div className="container">
       <div className="buttonContainer">
-        <RaceTypeFilter updateFilter={updateFilter} handleRaceTypeChange={(e) => setSelectedCategory(e.target.value)} />
+        <RaceTypeFilter updateFilter={updateFilter} />
       </div>
       <div className="list">
         <RaceList raceList={races} />

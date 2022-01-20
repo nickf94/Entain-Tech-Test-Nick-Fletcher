@@ -1,0 +1,27 @@
+main {
+  display: flex;
+  justify-content: center;
+}
+li {
+  list-style: none;
+}
+ul {
+  margin: unset;
+}
+.race-container {
+  width: 1120px;
+}
+.race-name {
+  border: 1px solid #675b5b;
+  padding: 10px;
+}
+
+.race-number {
+  border: 1px solid #675b5b;
+  padding: 10px;
+}
+
+.race-start-time {
+  border: 1px solid #675b5b;
+  padding: 10px;
+}
