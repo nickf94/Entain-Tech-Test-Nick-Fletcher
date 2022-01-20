@@ -6,6 +6,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import CountTime from './CountTime';
 
 const RaceList = ({ raceList }) => {
   return (
@@ -23,7 +24,7 @@ const RaceList = ({ raceList }) => {
             <TableRow key={race.race_id}>
               <TableCell align="center">{race.meetingName}</TableCell>
               <TableCell align="center">{race.raceNumber}</TableCell>
-              <TableCell align="center">{race.advertisedStart.seconds}</TableCell>
+              <TableCell align="center"><CountTime timeValue={race.advertisedStart.seconds} /></TableCell>
             </TableRow>
           ))}
         </TableBody>

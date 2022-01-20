@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import RaceTypeFilter from './components/RaceTypeFilter';
 import RaceList from './components/RaceList';
+import TimeHelper from './helpers/TimeHelper';
 
 const App = () => {
   const [races, setRaces] = useState([]);
@@ -108,10 +109,22 @@ const App = () => {
   }
 
   const dataRefresher = () => {
-    filteredSortedData();
+    let races = filteredSortedData();
 
-    const timeUntilNextRace = { ...races[0]?.advertised_start };
-    return timeUntilNextRace;
+    const timeUntilNextRace = { ...races[0]?.advertisedStart };
+    // Getting the advertisedStart time to show up was my main problem that i kept getting stuck on
+    // the races variable kept on messing up with me
+    console.log(races);
+    const interval = TimeHelper.timeUntilNextRace((timeUntilNextRace.seconds + 60) * 1000);
+    window.clearInterval(timerId);
+    console.log(interval);
+
+    if (interval > 0) {
+      timerId = window.setInterval( () => {
+        getRaceData();
+        window.clearInterval(timerId);
+      }, interval)
+    }
   }
 
   const updateFilter = () => {
