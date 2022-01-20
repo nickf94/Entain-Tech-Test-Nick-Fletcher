@@ -1,140 +1,102 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
+import axios from 'axios';
+import RaceTypeFilter from './components/RaceTypeFilter';
+import RaceList from './components/RaceList';
 
-export default class App extends React.Component {
+const App = () => {
+  const [races, setRaces] = useState([]);
+  const [sortedRaces, setSortedRaces] = useState([]);
+  const [unsortedRaces, setUnsortedRaces] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [time, setTime] = useState(Date.now());
+  const [raceCount, setRaceCount] = useState(100);
+  const [requestedCount, setRequestedCount] = useState(5);
+  const [selectedFilter, setSelectedFilter] = useState('');
 
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      raceData: [],
-      sortedRaces: [],
-      unsortedRaces: [],
-      selectedCategory: null,
-      time: Date.now(),
-      rowsToFetch: 5,
-    };
-
-    document.title = 'Entain Coding Test';
+  document.title = 'Entain Coding Test'
+  
+  const filters = {
+    Greyhound: '9daef0d7-bf3c-4f50-921d-8e818c60fe61',
+    Harness: '161d9be2-e909-4326-8c2c-35ed71fb460b',
+    Horse: '4a2788f8-e825-4d36-9894-efd4baf1cfae'
   }
 
-  // Use fetch API to gather the 10 next races to jump and add it to app state
-  // then set interval to update time in app state
-  componentDidMount() {
-    this.getRacingData();
+  useEffect(() => {
+    getRawRaceData();
 
-    this.interval = setInterval(() => {
-      this.setState({ time: Date.now() });
-      this.getRacingData();
+    const interval = setInterval(() => {
+      setTime(Date.now());
+      getRaceData();
     }, 1000);
+    return function cleanup() {
+      clearInterval(interval)
+    }
+  }, []);
+
+  const getRaceData = async() => {
+    races = await getRawRaceData(raceCount)
+    dataRefresher();
   }
 
-  // Clear the interval once app is closed/unmounted
-  componentWillUnmount() {
-    clearInterval(this.interval);
+  const getRawRaceData = (raceCount) => {
+    axios.get(`https://api.neds.com.au/rest/v1/racing/?method=nextraces&count=${raceCount}`, {
+        headers: { 'Content-type': 'application/json' }
+    }).then((res) => {
+      return Object.values(res.data.data.race_summaries);
+    })
+    .catch(err => console.log(err))
   }
 
-  // Fetch a specified number of next races to jump, sort by time ascending
-  // race categories and races >=60 seconds over start time
-  getRacingData = () => {
-    fetch(`https://api.neds.com.au/rest/v1/racing/?method=nextraces&count=${this.state.rowsToFetch}`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
+  const filterData = () => {
+    return races.reduce((accumulator: RaceListData[], race: RaceListData) => {
+      if (accumulator.length < requestedCount) {
+        if (race.category_id === selectedFilter) {
+          accumulator.push(race)
+        }
       }
-    }).then(res => res.json()).then(json => {
-      const { data } = json;
-
-      this.setState({
-        sortedRaces: [],
-      })
-
-      let newRaces = [];
-
-      const races = data.race_summaries;
-
-      for (const [key] of Object.entries(races)) {
-        const race = races[key];
-        newRaces = newRaces.concat({
-          // TODO: You will have to work with the API payload to determine what data you require
-        });
-      }
-
-      // Sort races by time to jump and add them to race list
-      newRaces.sort((item1, item2) => {
-        return item1.advertisedStart - item2.advertisedStart;
-      });
-
-      // Filter races for only those which are <60 seconds over start time
-      let sortedRaceCount = 0;
-
-      this.setState({
-        unsortedRaces: newRaces,
-        sortedRaces: newRaces.filter((value) => {
-          if (sortedRaceCount < 5 && (value.advertisedStart - this.state.time) > -60000) {
-            sortedRaceCount++;
-            return true;
-          }
-          return false;
-        })
-      });
-
-      if (sortedRaceCount < 5) {
-        this.setState({ rowsToFetch: this.state.rowsToFetch + 1 });
-        this.getRacingData();
-      }
-    });
+      return accumulator;
+    }, []);
   }
 
-  // Format time in XXmin XXs
-  getFormattedTime = (rawTime) => {
-    const timeMs = Math.round((rawTime - this.state.time) / 1000);
-    const timeMins = Math.round(Math.abs(timeMs) / 60);
-    const timeSecs = Math.abs(timeMs) % 60;
-
-    // TODO: Implement your logic to format the display of the race jump time
+  const filteredSortedData = () => {
+    return filterData()
+      .sort((firstRace: RaceListData, lastRace: RaceListData) =>
+        firstRace.advertised_start.seconds - lastRace.advertised_start.seconds
+      );
   }
 
-  // Render components
-  render() {
-    return (
-      <div className="container">
-        <div className="buttonContainer">
-          <button className="buttonToggle" onClick={() => {
-            // TODO: Populate the state sets with appropriate actions to give each button functionality
-            this.setState();
-          }}>All Races</button>
-        </div>
-        <div className="categories">
-          <div className="buttonContainer">
-            <button className="buttonToggle" onClick={() => {
-              // TODO: Populate the state sets with appropriate actions to give each button functionality
-              this.setState();
-            }}>Greyhounds</button>
-          </div>
-          <div className="buttonContainer">
-            <button className="buttonToggle" onClick={() => {
-              // TODO: Populate the state sets with appropriate actions to give each button functionality
-              this.setState();
-            }}>Harness</button>
-          </div>
-          <div className="buttonContainer">
-            <button className="buttonToggle" onClick={() => {
-              // TODO: Populate the state sets with appropriate actions to give each button functionality
-              this.setState();
-            }}>Thoroughbreds</button>
-          </div>
-        </div>
-        <div className="list">
-          {this.state.sortedRaces.map(item => (
-            <ul>
-              {/* TODO: Edit the string below to display the Race number, Meeting name and time to jump */}
-              <span className="item">Race X - Meeting - Jumps in X</span>
-            </ul>
-          ))}
-        </div>
+  const dataRefresher = () => {
+    races = filteredSortedData();
+
+    const timeUntilNextRace = { ...races[0]?.advertised_start };
+    const interval = TimeHelper.timeUntilNextRace((timeUntilNextRace.seconds + 60) * 1000);
+    window.clearInterval(timerId);
+    console.log(interval);
+    if (interval > 0) {
+      timerId = window.setInterval(() => {
+        getRawRaceData();
+        window.clearInterval(timerId);
+      }, interval);
+    }
+  }
+
+  const updateFilter = () => {
+    const filter = 'Greyhound' | 'Harness' | 'Horse'
+    selectedFilter = filters[filter];
+    dataRefresher();
+  };
+
+  return (
+    <div className="container">
+      <div className="buttonContainer">
+        <RaceTypeFilter updateFilter={updateFilter} handleRaceTypeChange={(e) => setSelectedCategory(e.target.value)} />
       </div>
-    );
-  }
+      <div className="list">
+        <RaceList raceList={races} />
+      </div>
+    </div>
+  );
 }
+
+export default App;
