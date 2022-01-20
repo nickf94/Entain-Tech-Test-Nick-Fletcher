@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import axios from 'axios';
 import RaceTypeFilter from './components/RaceTypeFilter';
 import RaceList from './components/RaceList';
 
@@ -13,6 +12,8 @@ const App = () => {
   const [raceCount, setRaceCount] = useState(100);
   const [requestedCount, setRequestedCount] = useState(5);
   const [selectedFilter, setSelectedFilter] = useState('');
+  
+  const timerId = 0;
 
   document.title = 'Entain Coding Test'
   
@@ -23,33 +24,71 @@ const App = () => {
   }
 
   useEffect(() => {
-    getRawRaceData();
+    getRaceData();
 
-    const interval = setInterval(() => {
-      setTime(Date.now());
-      getRaceData();
-    }, 1000);
     return function cleanup() {
-      clearInterval(interval)
+      if (timerId !== 0) {
+        window.clearInterval(timerId)
+      }
     }
   }, []);
 
-  const getRaceData = async() => {
-    races = await getRawRaceData(raceCount)
+  const getRaceData = () => {
+    getRawRaceData()
     dataRefresher();
   }
 
-  const getRawRaceData = (raceCount) => {
-    axios.get(`https://api.neds.com.au/rest/v1/racing/?method=nextraces&count=${raceCount}`, {
-        headers: { 'Content-type': 'application/json' }
-    }).then((res) => {
-      return Object.values(res.data.data.race_summaries);
+  const getRawRaceData = () => {
+    fetch(`https://api.neds.com.au/rest/v1/racing/?method=nextraces&count=${raceCount}`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-type': 'application/json'
+      }
+    }).then(res => res.json()).then(json => {
+      const { data } = json;
+
+      setSortedRaces([]);
+
+      let newRaces = [];
+
+      const races = data.race_summaries;
+
+      for (const [key] of Object.entries(races)) {
+        const race = races[key]
+        newRaces = newRaces.concat({
+          meetingName: race.meeting_name,
+          raceNumber: race.race_number,
+          advertisedStart: race.advertised_start
+        })
+      }
+
+      newRaces.sort((item1, item2) => {
+        return item1.advertised_start - item2.advertised_start;
+      });
+
+      let sortedRaceCount = 0;
+
+      setSortedRaces(() => {
+        newRaces.filter((value) => {
+          if (sortedRaceCount < 5 && (value.advertisedStart - time) > -60000) {
+            sortedRaceCount++;
+            return true;
+          }
+          return false;
+        })
+      })
+
+      if (sortedRaceCount < 5) {
+        setRaceCount({ raceCount: raceCount + 1 });
+        getRaceData();
+      }
     })
-    .catch(err => console.log(err))
+    return sortedRaces;
   }
 
   const filterData = () => {
-    return races.reduce((accumulator: RaceListData[], race: RaceListData) => {
+    return races.reduce((accumulator, race) => {
       if (accumulator.length < requestedCount) {
         if (race.category_id === selectedFilter) {
           accumulator.push(race)
@@ -61,24 +100,16 @@ const App = () => {
 
   const filteredSortedData = () => {
     return filterData()
-      .sort((firstRace: RaceListData, lastRace: RaceListData) =>
+      .sort((firstRace, lastRace) =>
         firstRace.advertised_start.seconds - lastRace.advertised_start.seconds
       );
   }
 
   const dataRefresher = () => {
-    races = filteredSortedData();
+    filteredSortedData();
 
     const timeUntilNextRace = { ...races[0]?.advertised_start };
-    const interval = TimeHelper.timeUntilNextRace((timeUntilNextRace.seconds + 60) * 1000);
-    window.clearInterval(timerId);
-    console.log(interval);
-    if (interval > 0) {
-      timerId = window.setInterval(() => {
-        getRawRaceData();
-        window.clearInterval(timerId);
-      }, interval);
-    }
+    return timeUntilNextRace;
   }
 
   const updateFilter = () => {
